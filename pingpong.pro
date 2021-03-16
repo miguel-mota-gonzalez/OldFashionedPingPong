@@ -10,7 +10,6 @@ CONFIG -= app_bundle
 SOURCES += \
         gameboard.cpp \
         main.cpp \
-        virtualplayer.cpp \
         window.cpp
 
 TARGET=pingpong
@@ -18,5 +17,4 @@ target.path = /tmp/$${TARGET}/bin
 
 HEADERS += \
     gameboard.h \
-    virtualplayer.h \
     window.h
