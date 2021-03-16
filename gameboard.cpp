@@ -39,6 +39,13 @@ const int RACKET_DIR_DOWN    = 2;
 const int RACKET_STEP_SIZE   = 10;
 
 const int GAME_SPEED         = 40;
+const int SCORE_FONT_SIZE    = 40;
+const int NOT_BLINKING       = -1;
+const int SCORE_BLINK_TIMES  = 20;
+
+const int NO_WINNER          = 0;
+const int LEFT_WON           = 1;
+const int RIGHT_WON          = 2;
 
 gameBoard *gameBoard::mInstance = nullptr;
 
@@ -64,8 +71,11 @@ gameBoard::gameBoard(QWidget *parent) : QOpenGLWidget(parent),
     mLRacketPos(MAGIC_BOARD_SIZE_Y/2),
     mLRacketDirection(RACKET_DIR_NONE),
     mRRacketPos(MAGIC_BOARD_SIZE_Y/2),
-    mRRacketDirection(RACKET_DIR_NONE)
-
+    mRRacketDirection(RACKET_DIR_NONE),
+    mLScore(0),
+    mRScore(0),
+    mPointBlinkCounter(NOT_BLINKING),
+    mLastWinner(NO_WINNER)
 {
     qDebug() << "game board created!";
     setFixedSize(MAGIC_BOARD_SIZE_X , MAGIC_BOARD_SIZE_Y);
@@ -87,28 +97,70 @@ void gameBoard::updateScreenTimerSlot()
 void gameBoard::paintEvent(QPaintEvent *event)
 {
     QPainter painter;
+    QFont scoreFont("Arial", 40, QFont::Bold);
+    bool doNowDraeNewElements = false;
+
     painter.begin(this);
 
+    painter.setFont(scoreFont);
     painter.setBackground(QBrush(Qt::black));
 
-    // Clear Brush
-    painter.setPen(QPen(Qt::black));
-    painter.setBrush(QBrush(Qt::black));
+    if(mPointBlinkCounter==NOT_BLINKING){
 
-    clearPrevElements(painter);
+        // Clear Brush
+        painter.setPen(QPen(Qt::black));
+        painter.setBrush(QBrush(Qt::black));
 
-    // Paint Brush
-    painter.setPen(QPen(Qt::green));
-    painter.setBrush(QBrush(Qt::green));
+        clearPrevElements(painter);
+
+        // Paint Brush
+        painter.setPen(QPen(Qt::green));
+        painter.setBrush(QBrush(Qt::green));
+
+        qDebug() << "Pos X: " << mBallPosX;
+
+        processNextRacketsPositions(mLRacketPos, mLRacketDirection);
+        processNextRacketsPositions(mRRacketPos, mRRacketDirection);
+        processNextBallYPostion();
+
+        if((mLastWinner=processNextBallXPostion())!=NO_WINNER){
+            mTimer->setInterval(GAME_SPEED/2);
+            mPointBlinkCounter=0;
+        }
+
+    }
+    else{
+        if(mPointBlinkCounter++<=SCORE_BLINK_TIMES){
+            if(mPointBlinkCounter%2==0){
+                painter.setPen(QPen(Qt::white));
+                painter.setBrush(QBrush(Qt::white));
+            }
+            else{
+                painter.setPen(QPen(Qt::green));
+                painter.setBrush(QBrush(Qt::green));
+            }
+        }
+        else{
+            doNowDraeNewElements = true;
+            painter.eraseRect(0, 0, MAGIC_BOARD_SIZE_X, MAGIC_BOARD_SIZE_Y);
+            mTimer->setInterval(GAME_SPEED);
+            mPointBlinkCounter=NOT_BLINKING;
+            if(mLastWinner==RIGHT_WON){
+                mBallPosY = mLRacketPos;
+                mBallPosX = MIN_BALL_POS_X;
+            }
+            else if(mLastWinner==LEFT_WON){
+                mBallPosY = mRRacketPos;
+                mBallPosX = MAX_BALL_POS_X;
+            }
+        }
+    }
 
     drawFixedElements(painter);
 
-    processNextRacketsPositions(mLRacketPos, mLRacketDirection);
-    processNextRacketsPositions(mRRacketPos, mRRacketDirection);
-    processNextBallXPostion();
-    processNextBallYPostion();
-
-    drawNewElements(painter);
+    if(!doNowDraeNewElements){
+        drawNewElements(painter);
+    }
 
     painter.end();
 }
@@ -139,24 +191,50 @@ void gameBoard::processNextBallYPostion()
     }
 }
 
-void gameBoard::processNextBallXPostion()
+bool gameBoard::shallBallReturn()
 {
+    int lRacketPos = ( mBallPosX <  MAGIC_BOARD_SIZE_X/2 ? mLRacketPos : mRRacketPos);
+
+    if(mBallPosY >= lRacketPos-(RACKET_HEIGHT/2) &&
+       mBallPosY <= lRacketPos+(RACKET_HEIGHT/2)){
+        return true;
+    }
+
+    return false;
+}
+
+int gameBoard::processNextBallXPostion()
+{
+    int retVal = NO_WINNER;
+
     switch(mBallDirectionH){
     case BALL_DIR_RIGHT:
 
-        if(mBallPosX+BALL_STEP_SIZE>=MAX_BALL_POS_X){
-            mBallPosX=MAX_BALL_POS_X;
+        if(mBallPosX>=MAX_BALL_POS_X){
+
+            if(!shallBallReturn()){
+                mLScore++;
+                retVal = LEFT_WON;
+            }
+
+            qDebug() << "<---";
             mBallDirectionH=BALL_DIR_LEFT;
         }
         else{
-            mBallPosX+=BALL_STEP_SIZE;
+            mBallPosX+=BALL_STEP_SIZE;            
         }
 
         break;
     case BALL_DIR_LEFT:
 
-        if(mBallPosX-BALL_STEP_SIZE <= MIN_BALL_POS_X){
-            mBallPosX=MIN_BALL_POS_X;
+        if(mBallPosX<=MIN_BALL_POS_X){
+
+            if(!shallBallReturn()){
+                mRScore++;
+                retVal = RIGHT_WON;
+            }
+
+            qDebug() << "--->";
             mBallDirectionH=BALL_DIR_RIGHT;
         }
         else{
@@ -165,6 +243,8 @@ void gameBoard::processNextBallXPostion()
 
         break;
     }
+
+    return retVal;
 }
 
 void gameBoard::processNextRacketsPositions(int &racketPos, int &racketDir)
@@ -236,6 +316,14 @@ void gameBoard::clearPrevElements(QPainter &painter)
                      RACKET_WIDTH,
                      RACKET_HEIGHT);
 
+    // Score
+    painter.drawText(MAGIC_BOARD_SIZE_X/3,
+                     MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
+                     QString::number(mLScore));
+    painter.drawText(MAGIC_BOARD_SIZE_X-(MAGIC_BOARD_SIZE_X/3),
+                     MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
+                     QString::number(mRScore));
+
     // Ball
     painter.drawEllipse(QRectF(mBallPosX, mBallPosY, BALL_SIZE, BALL_SIZE));
 }
@@ -251,6 +339,14 @@ void gameBoard::drawNewElements(QPainter &painter)
                      mRRacketPos-(RACKET_HEIGHT/2),
                      RACKET_WIDTH,
                      RACKET_HEIGHT);
+
+    // Score
+    painter.drawText(MAGIC_BOARD_SIZE_X/3,
+                     MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
+                     QString::number(mLScore));
+    painter.drawText(MAGIC_BOARD_SIZE_X-(MAGIC_BOARD_SIZE_X/3),
+                     MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
+                     QString::number(mRScore));
 
     // Ball
     painter.drawEllipse(QRectF(mBallPosX, mBallPosY, BALL_SIZE, BALL_SIZE));

@@ -35,9 +35,10 @@ protected:
     int mLRacketDirection;
     int mRRacketPos;
     int mRRacketDirection;
-
-    // Board next movements
-
+    int mLScore;
+    int mRScore;
+    int mPointBlinkCounter;
+    int mLastWinner;
 
     // Singleton instance, No smart pointer here
     // 'cause the window wodget will destroy it
@@ -57,8 +58,9 @@ protected:
 
     // Game movement methods
     void processNextRacketsPositions(int &racketPos, int &racketDir);
-    void processNextBallXPostion();
+    int processNextBallXPostion();
     void processNextBallYPostion();
+    bool shallBallReturn();
 
 protected slots:
 

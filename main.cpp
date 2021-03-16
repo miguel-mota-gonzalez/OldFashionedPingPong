@@ -12,7 +12,7 @@ public:
     ~ticTacToeApp() {
        window::destroySingleton();
 
-       qDebug() << "App finished!";
+       qDebug() << "App finished!!!";
     }
 };
 
