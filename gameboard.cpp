@@ -4,9 +4,6 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QTimer>
-#include <QMutex>
-#include <QMutexLocker>
-#include <QDateTime>
 #include <QDebug>
 
 const int MAGIC_BOARD_SIZE_X = 640;
