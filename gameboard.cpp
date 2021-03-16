@@ -119,10 +119,14 @@ void gameBoard::paintEvent(QPaintEvent *event)
 
         qDebug() << "Pos X: " << mBallPosX;
 
+        // Racket is in its next position
         processNextRacketsPositions(mLRacketPos, mLRacketDirection);
         processNextRacketsPositions(mRRacketPos, mRRacketDirection);
+
+        // Move to next Y position
         processNextBallYPostion();
 
+        // Move to next X position and detrmine if there's a score winning
         if((mLastWinner=processNextBallXPostion())!=NO_WINNER){
             mTimer->setInterval(GAME_SPEED/2);
             mPointBlinkCounter=0;
@@ -195,8 +199,8 @@ bool gameBoard::shallBallReturn()
 {
     int lRacketPos = ( mBallPosX <  MAGIC_BOARD_SIZE_X/2 ? mLRacketPos : mRRacketPos);
 
-    if(mBallPosY >= lRacketPos-(RACKET_HEIGHT/2) &&
-       mBallPosY <= lRacketPos+(RACKET_HEIGHT/2)){
+    if(mBallPosY >= lRacketPos-(RACKET_HEIGHT/2)-(BALL_SIZE/2) &&
+       mBallPosY <= lRacketPos+(RACKET_HEIGHT/2)+(BALL_SIZE/2)){
         return true;
     }
 
