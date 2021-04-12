@@ -183,7 +183,7 @@ void gameBoard::processNextBallYPostion()
     switch(mBallDirectionV){
     case BALL_DIR_DOWN:
 
-        if(mBallPosY + BALL_STEP_SIZE >= MAX_BALL_POS_Y){
+        if(mBallPosY >= MAX_BALL_POS_Y){
             mBallPosY = MAX_BALL_POS_Y;
             mBallDirectionV = BALL_DIR_UP;
         }
@@ -193,7 +193,7 @@ void gameBoard::processNextBallYPostion()
         break;
     case BALL_DIR_UP:
 
-        if(mBallPosY - BALL_STEP_SIZE <= MIN_BALL_POS_Y){
+        if(mBallPosY <= MIN_BALL_POS_Y){
             mBallPosY = MIN_BALL_POS_Y;
             mBallDirectionV = BALL_DIR_DOWN;
         }
