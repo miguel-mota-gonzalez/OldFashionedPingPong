@@ -44,6 +44,11 @@ const int NO_WINNER          = 0;
 const int LEFT_WON           = 1;
 const int RIGHT_WON          = 2;
 
+const int MSG_ADJUSTMENT     = 115;
+const int MSG_DURATION       = 5000;
+const QString INITIAL_MSG_LEFT  = QStringLiteral("W-UP, S-DOWN");
+const QString INITIAL_MSG_RIGHT = QStringLiteral("O-UP, K-DOWN");
+
 gameBoard *gameBoard::mInstance = nullptr;
 
 gameBoard *gameBoard::singleInstance(QWidget *parent)
@@ -72,7 +77,8 @@ gameBoard::gameBoard(QWidget *parent) : QOpenGLWidget(parent),
     mLScore(0),
     mRScore(0),
     mPointBlinkCounter(NOT_BLINKING),
-    mLastWinner(NO_WINNER)
+    mLastWinner(NO_WINNER),
+    mMessageTimer(0)
 {
     qDebug() << "game board created!";
     setFixedSize(MAGIC_BOARD_SIZE_X , MAGIC_BOARD_SIZE_Y);
@@ -88,6 +94,11 @@ gameBoard::gameBoard(QWidget *parent) : QOpenGLWidget(parent),
 
 void gameBoard::updateScreenTimerSlot()
 {
+    // Initial Message timer
+    if(mMessageTimer < MSG_DURATION){
+        mMessageTimer+=GAME_SPEED;
+    }    
+    
     update();
 }
 
@@ -95,6 +106,7 @@ void gameBoard::paintEvent(QPaintEvent *event)
 {
     QPainter painter;
     QFont scoreFont("Arial", 40, QFont::Bold);
+    QFont msgFont("Arial", 12, QFont::Bold);
     bool doNowDraeNewElements = false;
 
     painter.begin(this);
@@ -108,7 +120,7 @@ void gameBoard::paintEvent(QPaintEvent *event)
         painter.setPen(QPen(Qt::black));
         painter.setBrush(QBrush(Qt::black));
 
-        clearPrevElements(painter);
+        clearPrevElements(painter, scoreFont, msgFont);
 
         // Paint Brush
         painter.setPen(QPen(Qt::green));
@@ -160,7 +172,7 @@ void gameBoard::paintEvent(QPaintEvent *event)
     drawFixedElements(painter);
 
     if(!doNowDraeNewElements){
-        drawNewElements(painter);
+        drawNewElements(painter, scoreFont, msgFont);
     }
 
     painter.end();
@@ -305,7 +317,7 @@ void gameBoard::drawFixedElements(QPainter &painter)
     painter.drawRect(0, MAGIC_BOARD_SIZE_Y-LINE_HEIGHT, MAGIC_BOARD_SIZE_X, LINE_HEIGHT);
 }
 
-void gameBoard::clearPrevElements(QPainter &painter)
+void gameBoard::clearPrevElements(QPainter &painter, QFont &scoreFont, QFont &msgFont)
 {
     // Racket s
     painter.drawRect(HORIZONTAL_MARGIN,
@@ -318,18 +330,28 @@ void gameBoard::clearPrevElements(QPainter &painter)
                      RACKET_HEIGHT);
 
     // Score
+    painter.setFont(scoreFont);
     painter.drawText(MAGIC_BOARD_SIZE_X/3,
                      MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
                      QString::number(mLScore));
     painter.drawText(MAGIC_BOARD_SIZE_X-(MAGIC_BOARD_SIZE_X/3),
                      MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
                      QString::number(mRScore));
+    
+    // Message
+    painter.setFont(msgFont);
+    painter.drawText(HORIZONTAL_MARGIN + RACKET_WIDTH,
+                     MAGIC_BOARD_SIZE_Y - RACKET_HEIGHT,
+                     INITIAL_MSG_LEFT);
+    painter.drawText(MAGIC_BOARD_SIZE_X - HORIZONTAL_MARGIN - RACKET_WIDTH - MSG_ADJUSTMENT,
+                     MAGIC_BOARD_SIZE_Y - RACKET_HEIGHT,
+                     INITIAL_MSG_RIGHT);    
 
     // Ball
     painter.drawEllipse(QRectF(mBallPosX, mBallPosY, BALL_SIZE, BALL_SIZE));
 }
 
-void gameBoard::drawNewElements(QPainter &painter)
+void gameBoard::drawNewElements(QPainter &painter, QFont &scoreFont, QFont &msgFont)
 {
     // Racket s
     painter.drawRect(HORIZONTAL_MARGIN,
@@ -342,12 +364,24 @@ void gameBoard::drawNewElements(QPainter &painter)
                      RACKET_HEIGHT);
 
     // Score
+    painter.setFont(scoreFont);
     painter.drawText(MAGIC_BOARD_SIZE_X/3,
                      MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
                      QString::number(mLScore));
     painter.drawText(MAGIC_BOARD_SIZE_X-(MAGIC_BOARD_SIZE_X/3),
                      MIN_BALL_POS_Y + LINE_HEIGHT + SCORE_FONT_SIZE,
                      QString::number(mRScore));
+    
+    // Message
+    if (mMessageTimer < MSG_DURATION){
+        painter.setFont(msgFont);
+        painter.drawText(HORIZONTAL_MARGIN + RACKET_WIDTH,
+                         MAGIC_BOARD_SIZE_Y - RACKET_HEIGHT,
+                         INITIAL_MSG_LEFT);
+        painter.drawText(MAGIC_BOARD_SIZE_X - HORIZONTAL_MARGIN - RACKET_WIDTH - MSG_ADJUSTMENT,
+                         MAGIC_BOARD_SIZE_Y - RACKET_HEIGHT,
+                         INITIAL_MSG_RIGHT);
+    }    
 
     // Ball
     painter.drawEllipse(QRectF(mBallPosX, mBallPosY, BALL_SIZE, BALL_SIZE));
