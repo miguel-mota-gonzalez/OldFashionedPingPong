@@ -39,6 +39,7 @@ protected:
     int mRScore;
     int mPointBlinkCounter;
     int mLastWinner;
+    int mMessageTimer;
 
     // Singleton instance, No smart pointer here
     // 'cause the window wodget will destroy it
@@ -53,8 +54,8 @@ protected:
 
     // Internal draw methods
     void drawFixedElements(QPainter &painter);
-    void clearPrevElements(QPainter &painter);
-    void drawNewElements(QPainter &painter);
+    void clearPrevElements(QPainter &painter, QFont &scoreFont, QFont &msgFont);
+    void drawNewElements(QPainter &painter, QFont &scoreFont, QFont &msgFont);
 
     // Game movement methods
     void processNextRacketsPositions(int &racketPos, int &racketDir);
