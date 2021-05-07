@@ -4,3 +4,5 @@ This is my c++/QT based version of the first game I played in my life, this sing
 The implementation is very simple but it kind of work.
 
 Best Regards.
+
+![alt text](https://github.com/miguel-mota-gonzalez/OldFashionedPingPong/blob/main/2021_05_07_13_32_25_Window.png)
